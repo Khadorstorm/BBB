@@ -4,19 +4,64 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
+from utils import *
 
-train_data = pd.read_csv('train/train_feature.csv')
-train_data.fillna(0,inplace=True)
-X_train = train_data.drop(['id', 'label','smi'], axis=1)  # Drop the 'id' and 'label' columns for features
-y_train = train_data['label']  # Use the 'label' column as the label
+def lightgbm(X_train, y_train, X_test, y_test):
+    train_data = lgb.Dataset(X_train, label=y_train)
 
-# Load test data
-test_data = pd.read_csv('test/test_feature.csv')
-test_data.fillna(0,inplace=True)
-X_test = test_data.drop(['id', 'label', 'smi'], axis=1)
-y_test = test_data['label']
+    # Set the parameters for the model
+    params = {
+        'objective': 'binary',  # Use 'multiclass' for multi-class classification
+        'metric': 'binary_logloss',  # Use 'multi_logloss' for multi-class classification
+        'num_leaves': 31,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.9,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5
+    }
 
+    # Train the model
+    gbm = lgb.train(params, train_data, num_boost_round=100)
+
+    # Predict on test set
+    y_pred_prob = gbm.predict(X_test)
+    y_pred = np.round(y_pred_prob)
+
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+    roc_auc = roc_auc_score(y_test, y_pred_prob)
+    print(f'Accuracy: {accuracy}, ROC AUC: {roc_auc}')
+
+    # Prepare the LightGBM dataset
+    train_data = lgb.Dataset(X_train, label=y_train)
+
+    # Set the parameters for the model
+    params = {
+        'objective': 'binary',  # Use 'multiclass' for multi-class classification
+        'metric': 'binary_logloss',  # Use 'multi_logloss' for multi-class classification
+        'num_leaves': 31,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.9,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5
+    }
+
+    # Train the model
+    gbm = lgb.train(params, train_data, num_boost_round=100)
+
+    # Predict on test set
+    y_pred_prob = gbm.predict(X_test)
+    y_pred = np.round(y_pred_prob)
+    x_pred_prob = gbm.predict(X_train)
+    x_pred = np.round(x_pred_prob)
+
+    return y_pred_prob, y_pred,x_pred_prob, x_pred
+
+X_train, y_train, X_test, y_test = get_dataset()
+y_pred_prob, y_pred,_,_ = lightgbm(X_train, y_train, X_test, y_test)
+evaluate(y_test, y_pred, y_pred_prob)
 # Prepare the LightGBM dataset
+"""
 train_data = lgb.Dataset(X_train, label=y_train)
 
 # Set the parameters for the model
@@ -37,6 +82,9 @@ gbm = lgb.train(params, train_data, num_boost_round=100)
 y_pred_prob = gbm.predict(X_test)
 y_pred = np.round(y_pred_prob)
 
+"""
+
+"""
 # Evaluate the model
 accuracy = accuracy_score(y_test, y_pred)
 roc_auc = roc_auc_score(y_test, y_pred_prob)
@@ -85,3 +133,4 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.show()
+"""

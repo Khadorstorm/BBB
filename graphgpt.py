@@ -10,9 +10,31 @@ from torch_geometric.data import Data, Dataset, DataLoader
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-
+from utils import *
 # Load your dataset
-df = pd.read_csv('train/train_feature.csv')  # Ensure your CSV has columns 'SMILES' and 'label'
+def GCN(train_raw, test_raw, train_super_features, test_super_features):
+    #scaler = StandardScaler()
+    #normalized_features = scaler.fit_transform(X_train)
+    graphs, labels = load_dataset(train_raw, train_super_features)
+    dataset = MoleculeDataset(graphs, labels)
+    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    model = GNN()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    loss_fn = torch.nn.BCELoss()
+    for epoch in range(50):  # Number of epochs
+        train(model, optimizer, loss_fn)
+        print(f'Epoch {epoch + 1} Complete')
+
+    # At this point, you can evaluate the model's performance on a test set in a similar manner.
+
+    test_graphs, test_labels = load_dataset(test_raw, test_super_features)  # Adjust the path as needed
+    test_dataset = MoleculeDataset(test_graphs, test_labels)
+    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+    true_labels, predictions = evaluate(test_loader)
+    return predictions
+
+df = pd.read_csv('~/PycharmProjects/BBB5/train/train_feature.csv')  # Ensure your CSV has columns 'SMILES' and 'label'
 scaler = StandardScaler()
 features = df.drop(['smi', 'label', 'id'], axis=1)  # Assuming these columns exist
 normalized_features = scaler.fit_transform(features)
@@ -20,7 +42,7 @@ normalized_features = scaler.fit_transform(features)
 def mol_to_graph(smiles_string, super_node_features):
     mol = Chem.MolFromSmiles(smiles_string)
     if not mol:
-        print('knulla')
+        #print('kn')
         print(smiles_string)
         return None
 
@@ -61,11 +83,11 @@ def mol_to_graph(smiles_string, super_node_features):
 
     return data
 
-def load_dataset(df):
+def load_dataset(df, super_features):
     graphs = []
     labels = []
     for index, row in df.iterrows():
-        super_node_features = normalized_features[index]
+        super_node_features = super_features[index]
         graph = mol_to_graph(row['smi'], super_node_features)
         if graph is not None:
             graphs.append(graph)
@@ -112,12 +134,15 @@ class GNN(torch.nn.Module):
         return torch.sigmoid(x)
 
 # Initialize the model, optimizer, and loss function
+"""
 model = GNN()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 loss_fn = torch.nn.BCELoss()
+"""
+
 
 # Train the model
-def train():
+def train(model,optimizer, loss_fn):
     model.train()
     for data, label in loader:
         optimizer.zero_grad()
