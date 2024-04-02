@@ -57,9 +57,9 @@ def lightgbm(X_train, y_train, X_test, y_test):
 
     return y_pred_prob, y_pred,x_pred_prob, x_pred
 
-X_train, y_train, X_test, y_test = get_dataset()
-y_pred_prob, y_pred,_,_ = lightgbm(X_train, y_train, X_test, y_test)
-evaluate(y_test, y_pred, y_pred_prob)
+#X_train, y_train, X_test, y_test = get_dataset()
+#y_pred_prob, y_pred,_,_ = lightgbm(X_train, y_train, X_test, y_test)
+#evaluate(y_test, y_pred, y_pred_prob)
 # Prepare the LightGBM dataset
 """
 train_data = lgb.Dataset(X_train, label=y_train)

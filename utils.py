@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 #from utils import *
 
-class Dataset:
+class myDataset:
     def __init__(self, train_path='~/PycharmProjects/BBB5/train/train_feature.csv',
                 test_path = '~/PycharmProjects/BBB5/test/test_feature.csv'):
         self.train_data = pd.read_csv(train_path)

@@ -22,7 +22,7 @@ def GCN(train_raw, test_raw, train_super_features, test_super_features):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     loss_fn = torch.nn.BCELoss()
     for epoch in range(50):  # Number of epochs
-        train(model, optimizer, loss_fn)
+        train(model, loader,optimizer, loss_fn)
         print(f'Epoch {epoch + 1} Complete')
 
     # At this point, you can evaluate the model's performance on a test set in a similar manner.
@@ -31,13 +31,30 @@ def GCN(train_raw, test_raw, train_super_features, test_super_features):
     test_dataset = MoleculeDataset(test_graphs, test_labels)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-    true_labels, predictions = evaluate(test_loader)
+    true_labels, predictions = evaluate(test_loader,model)
+
+    fpr, tpr, _ = roc_curve(true_labels, predictions)
+    #print(fpr, tpr)
+    roc_auc = auc(fpr, tpr)
+
+    # Plot ROC curve
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
     return predictions
 
-df = pd.read_csv('~/PycharmProjects/BBB5/train/train_feature.csv')  # Ensure your CSV has columns 'SMILES' and 'label'
-scaler = StandardScaler()
-features = df.drop(['smi', 'label', 'id'], axis=1)  # Assuming these columns exist
-normalized_features = scaler.fit_transform(features)
+#df = pd.read_csv('~/PycharmProjects/BBB5/train/train_feature.csv')  # Ensure your CSV has columns 'SMILES' and 'label'
+#scaler = StandardScaler()
+#features = df.drop(['smi', 'label', 'id'], axis=1)  # Assuming these columns exist
+#normalized_features = scaler.fit_transform(features)
 # Define a function to convert a molecule from SMILES to a graph
 def mol_to_graph(smiles_string, super_node_features):
     mol = Chem.MolFromSmiles(smiles_string)
@@ -64,7 +81,7 @@ def mol_to_graph(smiles_string, super_node_features):
 
     # Calculate a global descriptor for the molecule, e.g., molecular weight
     mol_weight = Descriptors.MolWt(mol)
-    super_node_feature = torch.tensor([mol_weight], dtype=torch.float).view(1, -1)
+    #super_node_feature = torch.tensor([mol_weight], dtype=torch.float).view(1, -1)
     # Assuming atom_features have 2 features, ensure super_node_feature also has 2 features
     # For example, by repeating the molecular weight or adding another global descriptor
     super_node_feature = torch.tensor( super_node_features, dtype=torch.float).view(1, -1)
@@ -106,9 +123,9 @@ class MoleculeDataset(Dataset):
     def get(self, idx):
         return self.graphs[idx], self.labels[idx]
 
-graphs, labels = load_dataset(df)
-dataset = MoleculeDataset(graphs, labels)
-loader = DataLoader(dataset, batch_size=32, shuffle=True)
+#graphs, labels = load_dataset(df)
+#dataset = MoleculeDataset(graphs, labels)
+#loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 # Define a simple GNN model
 class GNN(torch.nn.Module):
@@ -142,7 +159,7 @@ loss_fn = torch.nn.BCELoss()
 
 
 # Train the model
-def train(model,optimizer, loss_fn):
+def train(model, loader,optimizer, loss_fn):
     model.train()
     for data, label in loader:
         optimizer.zero_grad()
@@ -150,7 +167,7 @@ def train(model,optimizer, loss_fn):
         loss = loss_fn(out, label.unsqueeze(1))
         loss.backward()
         optimizer.step()
-
+'''
 for epoch in range(50):  # Number of epochs
     train()
     print(f'Epoch {epoch+1} Complete')
@@ -161,8 +178,10 @@ test_graphs, test_labels = load_dataset(df = pd.read_csv('test/test.csv'))  # Ad
 test_dataset = MoleculeDataset(test_graphs, test_labels)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
+'''
+
 # Evaluation function
-def evaluate(test_loader):
+def evaluate(test_loader, model):
     model.eval()
     true_labels = []
     predictions = []
@@ -172,7 +191,7 @@ def evaluate(test_loader):
             predictions.extend(out.view(-1).cpu().numpy())
             true_labels.extend(label.cpu().numpy())
     return true_labels, predictions
-
+'''
 # Evaluate model on the test set
 true_labels, predictions = evaluate(test_loader)
 
@@ -193,3 +212,4 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.show()
+'''
